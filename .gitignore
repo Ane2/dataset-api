@@ -38,3 +38,4 @@ config/connection.yaml
 config/default.yaml
 config/virtualization.yaml
 config/storage.yaml
+config/network.yaml

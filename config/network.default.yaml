@@ -1,0 +1,11 @@
+https:
+  enabled: false
+  certificate: server.crt
+  key: server.key
+  host: null
+  port: 443
+  force: true
+
+http:
+  host: null
+  port: 80
