@@ -13,18 +13,13 @@ const fs = require('fs')
 const Connections = require('./system/connections.js')
 const Exceptions = require('./system/exceptions.js')
 
-const app = express({
-  key: fs.readFileSync('./server.key'),
-  cert: fs.readFileSync('./server.crt')
-})
-
-
 const https = require('https')
 const http = require('http')
 const url = require('url')
 
 const network = Config.network
 
+const app = express()
 
 if(Config.network.https.enabled){
   let server = https.createServer({

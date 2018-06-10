@@ -10,10 +10,13 @@ const Exceptions = require('./exceptions.js')
 const Connections = require('./connections.js')
 const Validator = new (require('jsonschema').Validator)
 const Util = require('./util.js')
+const Sandbox = require('./sandbox.js')
 
 const ROOT_DIRECTORY = process.cwd()
 
 const Config = require('./config.js')
+
+const vm = require('vm')
 
 class Synopsis{
   constructor(directory, version){
@@ -54,8 +57,7 @@ class Synopsis{
       }
 
       let entry = this.synopsis[route]
-      let router = express.Router()
-
+      let router = express.Router({ mergeParams: true })
 
       if(entry === null || entry === undefined) throw new Exceptions.ROUTE_ACTION_REQUIRED
 
@@ -272,60 +274,39 @@ class Synopsis{
   setup_middleware(router, p){
     let middleware_path = path.join(this.directory, p)
 
-    let handler
-    try{
-      handler = require(middleware_path)
-    }catch(e){
-      // TODO: Get line properly, from stack?
-      throw new Exceptions.MIDDLEWARE_HANDLER(e.message, handler_path, 'Unknown')
-    }
-
-    if(!handler.middleware){
+    if (!fs.existsSync(middleware_path)) {
       throw new Exceptions.MIDDLEWARE_NOT_DEFINED(path.join(this.version, p))
     }
 
-
-    /*
-    Using pre handler if defined
-     */
-
-    if(handler.pre){
-      router.use((request, response, next) => {
-        let result = handler.pre(request, response, next)
-
-        if((!result instanceof Promise) && (!result instanceof Util.AsyncFunction)){
-          throw new Exceptions.MIDDLEWARE_RESULT('handler.pre')
-        }
-
-        result.then(() => next())
-        .catch(e => {
-          if(e.code === undefined){
-            throw new Exceptions.MIDDLEWARE_EXCEPTION(e.message)
-          }else{
-            throw e
-          }
-        })
-        .catch(next)
-      })
-    }
-
-
-    /*
-    Using middleware
-     */
+    let script = new vm.Script(fs.readFileSync(middleware_path, 'utf-8'))
 
     router.use((request, response, next) => {
-      let result = handler.middleware(request, response, next)
+      let sandbox = new Sandbox(request, response)
 
-      if(!(result instanceof Promise) && !(result instanceof Util.AsyncFunction)){
-        throw new Exceptions.MIDDLEWARE_RESULT('handler.middleware')
+      try {
+        script.runInNewContext(sandbox)
+      } catch (e) {
+        throw new Exceptions.MIDDLEWARE_HANDLER(e.message, middleware_path.replace(process.cwd(), '').replace(/\\/g, '/'), 'Unknown')
       }
 
-      result.then(result => {
+      let result
+
+      try {
+        result = sandbox.Result()
+      } catch (e) {
+        throw new Exceptions.MIDDLEWARE_HANDLER(e.message, middleware_path.replace(process.cwd(), '').replace(/\\/g, '/'), 'Unknown')
+      }
+
+      if (!result || (!result instanceof Promise && !result instanceof Util.AsyncFunction)) {
+        throw new Exceptions.MIDDLEWARE_RESULT('sandbox.Result')
+      }
+
+      result
+      .then((result) => {
         request.result = result
         next()
       })
-      .catch(e => {
+      .catch((e) => {
         if(e.code === undefined){
           throw new Exceptions.MIDDLEWARE_EXCEPTION(e.message)
         }else{
@@ -334,31 +315,6 @@ class Synopsis{
       })
       .catch(next)
     })
-
-
-    /*
-    Using post handler if defined
-     */
-
-    if(handler.post){
-      router.use((request, response, next) => {
-        let result = handler.post(request, response, next)
-
-        if(!(result instanceof Promise) && !(result instanceof Util.AsyncFunction)){
-          throw new Exceptions.MIDDLEWARE_RESULT('handler.post')
-        }
-
-        result.then(() => next())
-        .catch(e => {
-          if(e.code === undefined){
-            throw new Exceptions.MIDDLEWARE_EXCEPTION(e.message)
-          }else{
-            throw e
-          }
-        })
-        .catch(next)
-      })
-    }
   }
 
   setup_query(router, query){

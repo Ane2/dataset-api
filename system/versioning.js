@@ -24,7 +24,7 @@ class Versioning{
 
       let synopsis = this.list[version] = new Synopsis(path.join(SET_PATH, version), version)
 
-      this.server.use('/api/' + version, (req, res, next) => {
+      this.server.use('/' + version, (req, res, next) => {
         synopsis.router(req, res, next)
       })
     }
@@ -43,7 +43,7 @@ class Versioning{
 
       let synopsis = this.list[version] = new Synopsis(path.join(SET_PATH, version), version)
 
-      this.server.use('/api/' + version, (req, res, next) => {
+      this.server.use('/' + version, (req, res, next) => {
         synopsis.router(req, res, next)
       })
     }
