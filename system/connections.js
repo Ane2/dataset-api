@@ -11,8 +11,8 @@ class Connections{
   constructor(){
     this.list = {}
 
-    for(let name in Config.connections){
-      let configuration = Config.connections[name]
+    for(let name in Config.connection){
+      let configuration = Config.connection[name]
       let driver = require(path.join(ROOT_DIRECTORY, 'connection', configuration.driver))
 
       this.list[name] = new driver(configuration)
@@ -26,7 +26,7 @@ class Connections{
       throw new Exceptions.UNDEFINED_CONNECTION(name)
     }
 
-    // TODO: Figure out how to cancel more requests if connections are bad?
+    // TODO: Figure out how to cancel more requests if connection are bad?
 
     return connection
   }

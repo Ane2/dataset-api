@@ -61,6 +61,7 @@ class Synopsis{
 
       if(entry === null || entry === undefined) throw new Exceptions.ROUTE_ACTION_REQUIRED
 
+      entry.access = entry.access || Config.default.access
 
       /*
       Access middleware setup for route entry.
@@ -177,12 +178,17 @@ class Synopsis{
 
   setup_access(router, entry){
     router.use((request, response, next) => {
-      Access.for(entry)
+      Access.for(request, entry)
       .then(access => {
-        access.middleware(request, response, next)
+        request.access = access
+        next()
       })
       .catch(e => {
-        throw new Exceptions.ACCESS_EXCEPTION(e.message)
+        if (e.status === undefined) {
+          throw new Exceptions.ACCESS_EXCEPTION(e.message)
+        } else {
+          throw e
+        }
       })
       .catch(e => next(e))
     })
@@ -210,7 +216,7 @@ class Synopsis{
         if(result.valid) return next()
 
         let err = result.errors[0]
-        throw new Exceptions.VALIDATON_ERROR(validation.schema, (typeof err.schema === 'string' ? err.schema : 'unidentified'), err.message.replace(/\"/g, '\''))
+        throw new Exceptions.VALIDATON_ERROR(validation.schema, (typeof err.schema === 'string' ? err.schema : 'undefined'), err.message.replace(/\"/g, '\''))
       })
     }
 
@@ -307,7 +313,7 @@ class Synopsis{
         next()
       })
       .catch((e) => {
-        if(e.code === undefined){
+        if(e.status === undefined){
           throw new Exceptions.MIDDLEWARE_EXCEPTION(e.message)
         }else{
           throw e
@@ -338,7 +344,7 @@ class Synopsis{
         next()
       })
       .catch(e => {
-        if(e.code === undefined){
+        if(e.status === undefined){
           throw new Exceptions.MIDDLEWARE_EXCEPTION(e.message)
         }else{
           throw e

@@ -2,22 +2,22 @@ const fs = require('fs')
 const path = require('path')
 const yaml = require('js-yaml')
 
+const Util = require('./util.js')
+
+const Exceptions = require('./exceptions.js')
+
 class Access{
-  constructor(){
+  constructor() {
     this.access_path = path.resolve('./config/access.yaml')
 
     this.list = yaml.safeLoad(fs.readFileSync(this.access_path, 'utf-8'))
   }
 
-  async for(entry){
-    if(!entry.access) return {
-      middleware: (request, response, next) => next()
-    }
-
-    let access = this.list[entry.access]
+  async authorize(request, name) {
+    let access = this.list[name]
 
     if(access === undefined){
-      throw new Exceptions.UNDEFINED_ACCESS(entry.access)
+      throw new Exceptions.UNDEFINED_ACCESS(name)
     }
 
     let driver_path = path.join(process.cwd(), 'access', access.driver)
@@ -36,14 +36,36 @@ class Access{
       throw new Exceptions.ACCESS_DRIVER_CONSTRUCTOR(access.driver, e.message)
     }
 
-    if(result.middleware === undefined){
-      throw new Exceptions.ACCESS_MIDDLEWARE(path.join('access', access.driver))
+    if(result.authorize === undefined){
+      throw new Exceptions.ACCESS_AUTHORIZE(path.join('access', access.driver))
     }
 
-    return result
+    let authority = result.authorize(request)
+
+    if (!authority || (!authority instanceof Util.AsyncFunction && !authority instanceof Promise)) {
+      throw new Exceptions.ACCESS_AUTHORITY(path.join('access', access.driver))
+    }
+
+    return authority
   }
 
-  reload(){
+  async for(request, entry) {
+    if (!entry.access) return null
+
+    let names = Array.isArray(entry.access) ? entry.access : [entry.access]
+
+    for (let name of names) {
+      let authority = await this.authorize(request, name)
+
+      if (authority) {
+        return name
+      }
+    }
+
+    throw new Exceptions.BAD_AUTHORIZATION
+  }
+
+  reload() {
     this.list = yaml.safeLoad(fs.readFileSync(this.access_path, 'utf-8'))
   }
 }

@@ -63,11 +63,19 @@ class Mysql extends Connection{
     // TODO: Review Error handling section on the mysql module.
   }
 
-  async client(){
-    return this.pool.getConnection()
+  error(e) {
+    // console.log('handling connection error:', e.message)
+
+    console.log('Error at MYSQL driver')
   }
 
-  async execute(script, variables){
+  async client() {
+    let result = this.pool.getConnection()
+    result.catch(this.error)
+    return result
+  }
+
+  async execute(script, variables) {
     return {}
   }
 }

@@ -16,7 +16,7 @@ for(let name in exceptions){
 
     let err = new Error(message)
 
-    err.code = exception.code
+    err.status = exception.status
 
     if(exception.type){
       err.type = exception.type

@@ -1,18 +1,18 @@
 const Exceptions = require('../system/exceptions.js')
 
-class Simple{
+class Simple {
   constructor(config){
     this.key = config.key
   }
 
-  middleware(request, response, next){
+  async authorize(request){
     let authorization = request.headers.authorization
 
     if(authorization !== this.key){
-      throw new Exceptions.BAD_AUTHORIZATION
+      return false
     }
 
-    next()
+    return true
   }
 }
 

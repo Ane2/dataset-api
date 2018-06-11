@@ -1,9 +1,17 @@
 default:
-  key: someadminkey01
-  driver: simple # We could have used also (default, bcrypt, SSL any other?)
+  key: default
+  driver: simple # We could have used also (default, bcrypt, SSL any other?
+
 debug:
   key: debug-key
+  driver: simpl
+
+admin:
+  key: admin
   driver: simple
 
+user:
+  key: user
+  driver: simple
 
 # Test

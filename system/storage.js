@@ -1,7 +1,7 @@
 const Exceptions = require('./exceptions.js')
 
 class Cache{
-  constructor(){}
+  constructor(configuration){}
 
   async put(key, value, expires_in){ throw new Exceptions.STORAGE_DEFAULT_PUT }
   async get(key, value){ throw new Exceptions.STORAGE_DEFAULT_GET }

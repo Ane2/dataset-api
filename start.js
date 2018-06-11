@@ -103,7 +103,8 @@ app.use((e, request, response, next) => {
   Logger.error(e.message)
   Logger.trace(e.stack)
 
-  if(e.code === undefined) e.code = 500
+  if (e.status === undefined) e.status = 500
+  if (e.type === undefined) e.type = 'INTERNAL_ERROR'
 
-  response.status(e.code).json({error: e.type, message: e.message})
+  response.status(e.status).json({error: e.type, message: e.message})
 })
