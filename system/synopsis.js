@@ -74,7 +74,7 @@ class Synopsis{
       Cache middleware setup with request cache settings.
       */
 
-      this.setup_cache(router, (entry.request && entry.request.cache) ? entry.request.cache : null)
+      this.setup_cache(router, (entry.response && entry.response.cache) ? entry.response.cache : null)
 
 
       /*
@@ -281,16 +281,60 @@ class Synopsis{
     let middleware_path = path.join(this.directory, p)
 
     if (!fs.existsSync(middleware_path)) {
-      throw new Exceptions.MIDDLEWARE_NOT_DEFINED(path.join(this.version, p))
+      fs.writeFileSync(middleware_path, '\r\n\r\nasync function Result() {\r\n\tlet result = {}\r\n\r\n\treturn result\r\n}\r\n', {encoding: 'utf-8'})
+      // throw new Exceptions.MIDDLEWARE_NOT_DEFINED(path.join(this.version, p))
     }
 
     let script = new vm.Script(fs.readFileSync(middleware_path, 'utf-8'))
 
+    let Connections = require('./connections.js')
+    let Exceptions = require('./exceptions.js')
+    let Storages = require('./storages.js')
+    let Logger = require('./logger.js')
+
+
     router.use((request, response, next) => {
-      let sandbox = new Sandbox(request, response)
+      request.sandbox = {
+        console: console,
+
+        Connections: Connections,
+        Exceptions: Exceptions,
+        Storages: Storages,
+        Logger: Logger,
+
+        ROOT: process.cwd(),
+
+        Request: request,
+        Response: response,
+
+        Form: request.body,
+        Query: request.query,
+        Param: request.params,
+
+        require: (...args) => {
+          args.unshift('/')
+
+          let abs = path.join.apply(path, args).replace(path.sep, '')
+          let result
+
+          try {
+            result = require(abs)
+          } catch (e) {
+            result = require(path.join(process.cwd(), abs))
+          }
+
+          return result
+        }
+      }
+
+      // let sandbox = new Sandbox(request, response, next)
 
       try {
-        script.runInNewContext(sandbox)
+        script.runInNewContext(request.sandbox, {
+        lineOffset: 0,
+        columnOffset: 0,
+        contextName: 'RequestSandbox'
+      })
       } catch (e) {
         throw new Exceptions.MIDDLEWARE_HANDLER(e.message, middleware_path.replace(process.cwd(), '').replace(/\\/g, '/'), 'Unknown')
       }
@@ -298,7 +342,8 @@ class Synopsis{
       let result
 
       try {
-        result = sandbox.Result()
+        result = request.sandbox.Result()
+        delete request.sandbox
       } catch (e) {
         throw new Exceptions.MIDDLEWARE_HANDLER(e.message, middleware_path.replace(process.cwd(), '').replace(/\\/g, '/'), 'Unknown')
       }

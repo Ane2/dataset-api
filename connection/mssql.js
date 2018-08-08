@@ -6,14 +6,12 @@ class Mssql extends Connection{
   constructor(configuration){
     super()
 
-    var pool = new sql.ConnectionPool(configuration)
-    pool.on('error', error => this.operator.emit('error', error))
-
-    this.pool = pool
+    this.pool = sql.connect(configuration)
   }
 
   async client(){
-    return this.pool.request()
+    let pool = await this.pool
+    return pool.request()
   }
 
 }

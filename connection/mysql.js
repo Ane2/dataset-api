@@ -11,7 +11,7 @@ class Mysql extends Connection{
     // The pool will emit an acquire event when a connection is acquired from the pool.
     // This is called after all acquiring activity has been performed on the connection, right before the connection is handed to the callback of the acquiring code.
     this.pool.on('acquire', (connection) => {
-      console.log('Connection %d acquired', connection.threadId);
+      // console.log('Connection %d acquired', connection.threadId);
     });
 
     // The pool will emit a connection event when a new connection is made within the pool.
@@ -46,7 +46,7 @@ class Mysql extends Connection{
     // The pool will emit a release event when a connection is released back to the pool.
     // This is called after all release activity has been performed on the connection, so the connection will be listed as free at the time of the event.
     this.pool.on('release', (connection) => {
-      console.log('Connection %d released', connection.threadId);
+      // console.log('Connection %d released', connection.threadId);
 
       // Stop our ping.
       clearInterval(connection.ping_interval)
@@ -65,8 +65,7 @@ class Mysql extends Connection{
 
   error(e) {
     // console.log('handling connection error:', e.message)
-
-    console.log('Error at MYSQL driver')
+    console.log('Error at MYSQL driver:', e)
   }
 
   async client() {

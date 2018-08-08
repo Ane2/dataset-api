@@ -10,6 +10,8 @@ class Access{
   constructor() {
     this.access_path = path.resolve('./config/access.yaml')
 
+    console.log('constructing new access')
+
     this.list = yaml.safeLoad(fs.readFileSync(this.access_path, 'utf-8'))
   }
 
@@ -22,7 +24,10 @@ class Access{
 
     let driver_path = path.join(process.cwd(), 'access', access.driver)
 
+    console.log('creating new driver')
+
     let driver
+
     try{
       driver = require(driver_path)
     }catch(e){

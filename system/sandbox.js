@@ -19,6 +19,10 @@ class Sandbox {
     this.Request = request
     this.Response = response
 
+    this.Form = request.body
+    this.Query = request.query
+    this.Param = request.params
+
     this.require = (...args) => {
       args.unshift('/')
 
